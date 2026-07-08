@@ -1,0 +1,318 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum UserRole {
+  BUYER
+  AGENT
+  AGENCY_ADMIN
+  ADMIN
+}
+
+enum PropertyType {
+  APARTMENT
+  VILLA
+  TOWNHOUSE
+  PENTHOUSE
+  STUDIO
+  OFFICE
+  RETAIL
+  WAREHOUSE
+  LAND
+  BUILDING
+}
+
+enum ListingType {
+  SALE
+  RENT
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  PENDING
+  RENTED
+  SOLD
+  EXPIRED
+  REJECTED
+}
+
+enum RentFrequency {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CLOSED
+  SPAM
+}
+
+// ==========================================
+// AUTH / USERS
+// ==========================================
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  phone         String?  @unique
+  password      String
+  firstName     String
+  lastName      String
+  avatarUrl     String?
+  role          UserRole @default(BUYER)
+  isVerified    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  agent         Agent?
+  properties    Property[]      @relation("PropertyOwner")
+  favorites     Favorite[]
+  savedSearches SavedSearch[]
+  leadsSent     Lead[]          @relation("LeadSender")
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revoked   Boolean  @default(false)
+
+  @@map("refresh_tokens")
+}
+
+// ==========================================
+// AGENCY / AGENT
+// ==========================================
+
+model Agency {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?
+  description String?
+  phone       String?
+  email       String?
+  website     String?
+  licenseNo   String?  @unique
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  agents      Agent[]
+  properties  Property[]
+
+  @@map("agencies")
+}
+
+model Agent {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agencyId     String?
+  agency       Agency?  @relation(fields: [agencyId], references: [id])
+  licenseNo    String?  @unique
+  bio          String?
+  languages    String[] // e.g. ["en", "ar"]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  properties   Property[] @relation("PropertyAgent")
+
+  @@map("agents")
+}
+
+// ==========================================
+// LOCATION HIERARCHY (UAE style)
+// ==========================================
+
+model Emirate {
+  id         String      @id @default(uuid())
+  name       String      @unique // Dubai, Abu Dhabi, Sharjah, Ajman...
+  slug       String      @unique
+  communities Community[]
+
+  @@map("emirates")
+}
+
+model Community {
+  id            String        @id @default(uuid())
+  name          String        // Dubai Marina, Downtown Dubai, JVC...
+  slug          String
+  emirateId     String
+  emirate       Emirate       @relation(fields: [emirateId], references: [id])
+  subCommunities SubCommunity[]
+  properties    Property[]
+
+  @@unique([emirateId, slug])
+  @@map("communities")
+}
+
+model SubCommunity {
+  id          String     @id @default(uuid())
+  name        String     // e.g. "Marina Gate", "JVC District 12"
+  slug        String
+  communityId String
+  community   Community  @relation(fields: [communityId], references: [id])
+  properties  Property[]
+
+  @@unique([communityId, slug])
+  @@map("sub_communities")
+}
+
+// ==========================================
+// PROPERTY (acts as the listing itself)
+// ==========================================
+
+model Property {
+  id              String        @id @default(uuid())
+  title           String
+  slug            String        @unique
+  description     String
+  propertyType    PropertyType
+  listingType     ListingType
+  status          ListingStatus @default(DRAFT)
+
+  price           Decimal       @db.Decimal(12, 2)
+  rentFrequency   RentFrequency? // only relevant when listingType = RENT
+
+  bedrooms        Int?
+  bathrooms       Int?
+  areaSqft        Decimal?      @db.Decimal(10, 2)
+  floor           Int?
+  parkingSpots    Int?
+  furnished       Boolean       @default(false)
+
+  emirateId       String?
+  communityId     String?
+  community       Community?    @relation(fields: [communityId], references: [id])
+  subCommunityId  String?
+  subCommunity    SubCommunity? @relation(fields: [subCommunityId], references: [id])
+  addressLine     String?
+  latitude        Decimal?      @db.Decimal(9, 6)
+  longitude       Decimal?      @db.Decimal(9, 6)
+
+  ownerId         String
+  owner           User          @relation("PropertyOwner", fields: [ownerId], references: [id])
+  agentId         String?
+  agent           Agent?        @relation("PropertyAgent", fields: [agentId], references: [id])
+  agencyId        String?
+  agency          Agency?       @relation(fields: [agencyId], references: [id])
+
+  viewsCount      Int           @default(0)
+  isFeatured      Boolean       @default(false)
+  publishedAt     DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  images          PropertyImage[]
+  amenities       PropertyAmenity[]
+  favorites       Favorite[]
+  leads           Lead[]
+
+  @@index([listingType, propertyType, status])
+  @@index([communityId])
+  @@index([price])
+  @@map("properties")
+}
+
+model PropertyImage {
+  id         String   @id @default(uuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  url        String
+  isCover    Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@map("property_images")
+}
+
+model Amenity {
+  id         String            @id @default(uuid())
+  name       String            @unique // Pool, Gym, Balcony, Maid's Room...
+  icon       String?
+  properties PropertyAmenity[]
+
+  @@map("amenities")
+}
+
+model PropertyAmenity {
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amenityId  String
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  @@id([propertyId, amenityId])
+  @@map("property_amenities")
+}
+
+// ==========================================
+// LEADS / FAVORITES / SAVED SEARCHES
+// ==========================================
+
+model Lead {
+  id         String     @id @default(uuid())
+  propertyId String
+  property   Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  senderId   String?
+  sender     User?      @relation("LeadSender", fields: [senderId], references: [id])
+  name       String
+  email      String
+  phone      String
+  message    String?
+  status     LeadStatus @default(NEW)
+  createdAt  DateTime   @default(now())
+
+  @@index([propertyId, status])
+  @@map("leads")
+}
+
+model Favorite {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+  @@map("favorites")
+}
+
+model SavedSearch {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  filters   Json     // { propertyType, listingType, minPrice, maxPrice, bedrooms, communityId... }
+  alertsOn  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("saved_searches")
+}

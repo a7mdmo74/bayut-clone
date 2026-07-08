@@ -1,0 +1,456 @@
+{
+  "info": {
+    "name": "Bayut Clone API",
+    "description": "Collection for testing Bayut Clone API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "propertyId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"agent@example.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phone\": \"+971501234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"agent@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with email and password"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+                  "  pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout and invalidate refresh token"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Properties",
+      "item": [
+        {
+          "name": "Search Properties",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/properties?listingType=SALE&propertyType=APARTMENT&minPrice=500000&maxPrice=2000000&bedrooms=2&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["properties"],
+              "query": [
+                {
+                  "key": "listingType",
+                  "value": "SALE",
+                  "description": "Filter by listing type: SALE or RENT"
+                },
+                {
+                  "key": "propertyType",
+                  "value": "APARTMENT",
+                  "description": "Filter by property type: APARTMENT, VILLA, TOWNHOUSE, etc."
+                },
+                {
+                  "key": "communityId",
+                  "value": "",
+                  "description": "Filter by community ID (UUID)",
+                  "disabled": true
+                },
+                {
+                  "key": "minPrice",
+                  "value": "500000",
+                  "description": "Minimum price filter"
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "2000000",
+                  "description": "Maximum price filter"
+                },
+                {
+                  "key": "bedrooms",
+                  "value": "2",
+                  "description": "Number of bedrooms"
+                },
+                {
+                  "key": "bathrooms",
+                  "value": "",
+                  "description": "Number of bathrooms",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of items per page"
+                }
+              ]
+            },
+            "description": "Search properties with filters and pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Property by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/properties/:slug",
+              "host": ["{{baseUrl}}"],
+              "path": ["properties", ":slug"],
+              "variable": [
+                {
+                  "key": "slug",
+                  "value": "example-property-slug",
+                  "description": "Property slug identifier"
+                }
+              ]
+            },
+            "description": "Get a single property by its slug"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Property",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Luxury Apartment in Downtown Dubai\",\n  \"description\": \"Beautiful 2-bedroom apartment with stunning views of the Dubai skyline. Features modern amenities, spacious living area, and premium finishes throughout.\",\n  \"propertyType\": \"APARTMENT\",\n  \"listingType\": \"SALE\",\n  \"price\": 1500000,\n  \"bedrooms\": 2,\n  \"bathrooms\": 2,\n  \"areaSqft\": 1200,\n  \"furnished\": true,\n  \"addressLine\": \"Sheikh Zayed Road, Downtown Dubai\",\n  \"latitude\": 25.1972,\n  \"longitude\": 55.2744\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["properties"]
+            },
+            "description": "Create a new property listing (requires authentication and appropriate role)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('propertyId', jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Property (Rent)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Modern Studio for Rent in Marina\",\n  \"description\": \"Contemporary studio apartment in Dubai Marina with full amenities and stunning marina views.\",\n  \"propertyType\": \"STUDIO\",\n  \"listingType\": \"RENT\",\n  \"price\": 45000,\n  \"rentFrequency\": \"YEARLY\",\n  \"bedrooms\": 0,\n  \"bathrooms\": 1,\n  \"areaSqft\": 500,\n  \"furnished\": true,\n  \"addressLine\": \"Dubai Marina\",\n  \"latitude\": 25.0805,\n  \"longitude\": 55.1406\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/properties",
+              "host": ["{{baseUrl}}"],
+              "path": ["properties"]
+            },
+            "description": "Create a rental property listing (requires rentFrequency)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Property",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Luxury Apartment in Downtown Dubai\",\n  \"price\": 1600000,\n  \"description\": \"Beautiful 2-bedroom apartment with stunning views of the Dubai skyline. Recently renovated with premium finishes.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/properties/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["properties", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{propertyId}}",
+                  "description": "Property ID to update"
+                }
+              ]
+            },
+            "description": "Update an existing property (requires authentication)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Property",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/properties/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["properties", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{propertyId}}",
+                  "description": "Property ID to delete"
+                }
+              ]
+            },
+            "description": "Delete a property (requires authentication and ownership)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "API Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Check API status and version"
+          },
+          "response": []
+        },
+        {
+          "name": "Database Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check database connection health"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
