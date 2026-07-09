@@ -17,8 +17,10 @@ export async function create(req: Request, res: Response) {
   if (header?.startsWith('Bearer ')) {
     try {
       const token = header.split(' ')[1]
-      const payload = verifyAccessToken(token)
-      senderId = payload.userId
+      if (token) {
+        const payload = verifyAccessToken(token)
+        senderId = payload.userId
+      }
     } catch {
       // Token invalid or expired — proceed as guest
       senderId = undefined

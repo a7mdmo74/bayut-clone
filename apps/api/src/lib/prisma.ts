@@ -7,4 +7,4 @@ export const prisma = new PrismaClient({
       url: env.DATABASE_URL,
     },
   },
-})
+}) as any
