@@ -36,18 +36,22 @@ export async function serveFile(req: Request, res: Response) {
     res.setHeader('Cache-Control', 'public, max-age=3600')
 
     // Pipe the S3 stream to the response
-    stream.pipe(res)
+    if (stream && typeof (stream as any).pipe === 'function') {
+      (stream as any).pipe(res)
 
-    stream.on('error', (error: any) => {
-      console.error('Stream error:', error)
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Failed to serve file' })
-      }
-    })
+      (stream as any).on('error', (error: any) => {
+        console.error('Stream error:', error)
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Failed to serve file' })
+        }
+      })
 
-    stream.on('end', () => {
-      // Stream ended successfully
-    })
+      (stream as any).on('end', () => {
+        // Stream ended successfully
+      })
+    } else {
+      res.status(500).json({ error: 'Failed to serve file - invalid stream' })
+    }
   } catch (error: any) {
     console.error('Serve file error:', error)
     if (!res.headersSent) {
