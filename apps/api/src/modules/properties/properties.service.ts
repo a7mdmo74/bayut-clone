@@ -58,7 +58,7 @@ export async function getPropertyBySlug(slug: string) {
       where: { id: property.id },
       data: { viewsCount: { increment: 1 } },
     })
-    .catch(err => logger.error('Failed to increment view count:', err))
+    .catch((err: any) => logger.error('Failed to increment view count:', err))
 
   return property
 }

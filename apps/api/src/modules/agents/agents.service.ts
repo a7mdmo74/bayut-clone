@@ -41,7 +41,7 @@ export async function reviewApplication(
 
   // a transaction: either both updates succeed, or neither does —
   // you never want an approved application without an actual Agent record existing
-  return prisma.$transaction(async tx => {
+  return prisma.$transaction(async (tx: any) => {
     const updatedApplication = await tx.agentApplication.update({
       where: { id: applicationId },
       data: { status: decision, reviewedBy: adminId, reviewedAt: new Date() },

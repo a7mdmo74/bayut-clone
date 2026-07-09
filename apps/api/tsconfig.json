@@ -8,7 +8,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": false,
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": false
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

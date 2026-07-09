@@ -38,7 +38,7 @@ export async function serveFile(req: Request, res: Response) {
     // Pipe the S3 stream to the response
     stream.pipe(res)
 
-    stream.on('error', error => {
+    stream.on('error', (error: any) => {
       console.error('Stream error:', error)
       if (!res.headersSent) {
         res.status(500).json({ error: 'Failed to serve file' })
@@ -48,7 +48,7 @@ export async function serveFile(req: Request, res: Response) {
     stream.on('end', () => {
       // Stream ended successfully
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Serve file error:', error)
     if (!res.headersSent) {
       res
