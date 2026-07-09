@@ -1,11 +1,12 @@
 import { prisma } from '../../lib/prisma'
 import { AppError } from '../../utils/AppError'
+import { logger } from '../../lib/logger'
 import type {
   CreatePropertyInput,
   UpdatePropertyInput,
   PropertySearchQuery,
   PaginationQuery,
-} from '@bayut-clone/types'
+} from '@repo/types'
 
 // Slugify a title into a URL-safe string, e.g. "2BR Marina View" -> "2br-marina-view"
 function slugify(title: string): string {
@@ -57,7 +58,7 @@ export async function getPropertyBySlug(slug: string) {
       where: { id: property.id },
       data: { viewsCount: { increment: 1 } },
     })
-    .catch(err => console.error('Failed to increment view count:', err))
+    .catch(err => logger.error('Failed to increment view count:', err))
 
   return property
 }
@@ -66,6 +67,7 @@ export async function searchProperties(filters: PropertySearchQuery, pagination:
   const { page, limit } = pagination
   const skip = (page - 1) * limit
 
+  // Build the where clause with conditional spreads
   const where = {
     status: 'ACTIVE' as const,
     ...(filters.listingType && { listingType: filters.listingType }),
@@ -73,12 +75,29 @@ export async function searchProperties(filters: PropertySearchQuery, pagination:
     ...(filters.communityId && { communityId: filters.communityId }),
     ...(filters.bedrooms !== undefined && { bedrooms: filters.bedrooms }),
     ...(filters.bathrooms !== undefined && { bathrooms: filters.bathrooms }),
+    ...(filters.furnished !== undefined && { furnished: filters.furnished }),
     ...((filters.minPrice !== undefined || filters.maxPrice !== undefined) && {
       price: {
         ...(filters.minPrice !== undefined && { gte: filters.minPrice }),
         ...(filters.maxPrice !== undefined && { lte: filters.maxPrice }),
       },
     }),
+    ...(filters.keyword && {
+      OR: [
+        { title: { contains: filters.keyword, mode: 'insensitive' as const } },
+        { description: { contains: filters.keyword, mode: 'insensitive' as const } },
+      ],
+    }),
+  }
+
+  // Build orderBy based on sortBy parameter
+  let orderBy: any = { createdAt: 'desc' } // default
+  if (filters.sortBy === 'price_asc') {
+    orderBy = { price: 'asc' }
+  } else if (filters.sortBy === 'price_desc') {
+    orderBy = { price: 'desc' }
+  } else if (filters.sortBy === 'newest') {
+    orderBy = { createdAt: 'desc' }
   }
 
   const [data, total] = await Promise.all([
@@ -86,7 +105,7 @@ export async function searchProperties(filters: PropertySearchQuery, pagination:
       where,
       skip,
       take: limit,
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       include: {
         images: { where: { isCover: true }, take: 1 },
         community: true,
@@ -152,4 +171,19 @@ export async function deleteProperty(propertyId: string, userId: string, userRol
   }
 
   await prisma.property.delete({ where: { id: propertyId } })
+}
+
+export async function addPropertyImage(
+  propertyId: string,
+  userId: string,
+  url: string,
+  isCover = false
+) {
+  const property = await prisma.property.findUnique({ where: { id: propertyId } })
+  if (!property) throw new AppError(404, 'Property not found')
+  if (property.ownerId !== userId) throw new AppError(403, 'You do not own this property')
+
+  return prisma.propertyImage.create({
+    data: { propertyId, url, isCover },
+  })
 }

@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { registerSchema, loginSchema } from '@bayut-clone/types'
+import { registerSchema, loginSchema } from '@repo/types'
 import * as authService from './auth.service'
 
 export async function register(req: Request, res: Response) {

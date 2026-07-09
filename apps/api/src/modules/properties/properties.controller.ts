@@ -4,9 +4,9 @@ import {
   updatePropertySchema,
   propertySearchQuerySchema,
   paginationQuerySchema,
-} from '@bayut-clone/types'
+  addPropertyImageSchema,
+} from '@repo/types'
 import * as propertiesService from './properties.service'
-import { AppError } from '../../utils/AppError'
 
 export async function create(req: Request, res: Response) {
   const parsed = createPropertySchema.safeParse(req.body)
@@ -21,7 +21,7 @@ export async function create(req: Request, res: Response) {
 }
 
 export async function getOne(req: Request, res: Response) {
-  const property = await propertiesService.getPropertyBySlug(req.params.slug)
+  const property = await propertiesService.getPropertyBySlug(req.params.slug!)
   res.json(property)
 }
 
@@ -63,4 +63,21 @@ export async function update(req: Request, res: Response) {
 export async function remove(req: Request, res: Response) {
   await propertiesService.deleteProperty(req.params.id!, req.user!.userId, req.user!.role)
   res.status(204).send()
+}
+
+export async function addImage(req: Request, res: Response) {
+  const parsed = addPropertyImageSchema.safeParse(req.body)
+  if (!parsed.success) {
+    return res
+      .status(400)
+      .json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors })
+  }
+
+  const image = await propertiesService.addPropertyImage(
+    req.params.id!,
+    req.user!.userId,
+    parsed.data.url,
+    parsed.data.isCover
+  )
+  res.status(201).json(image)
 }

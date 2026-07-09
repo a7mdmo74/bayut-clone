@@ -82,6 +82,9 @@ export const updatePropertySchema = z
   })
 export type UpdatePropertyInput = z.infer<typeof updatePropertySchema>
 
+export const propertySortBySchema = z.enum(['newest', 'price_asc', 'price_desc'])
+export type PropertySortBy = z.infer<typeof propertySortBySchema>
+
 export const propertySearchQuerySchema = z.object({
   listingType: listingTypeSchema.optional(),
   propertyType: propertyTypeSchema.optional(),
@@ -90,8 +93,17 @@ export const propertySearchQuerySchema = z.object({
   maxPrice: z.coerce.number().positive().optional(),
   bedrooms: z.coerce.number().int().min(0).optional(),
   bathrooms: z.coerce.number().int().min(0).optional(),
+  keyword: z.string().optional(),
+  furnished: z.coerce.boolean().optional(),
+  sortBy: propertySortBySchema.optional(),
 })
 export type PropertySearchQuery = z.infer<typeof propertySearchQuerySchema>
+
+export const addPropertyImageSchema = z.object({
+  url: z.string().url(),
+  isCover: z.boolean().default(false),
+})
+export type AddPropertyImageInput = z.infer<typeof addPropertyImageSchema>
 
 // ---- OUTPUT: your backend controls this shape, nothing to validate ----
 export interface PropertyDTO {

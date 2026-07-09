@@ -1,6 +1,6 @@
 import jwt, { type SignOptions } from 'jsonwebtoken'
 import { env } from '../../config/env'
-import type { UserRole } from '@bayut-clone/types'
+import type { UserRole } from '@repo/types'
 
 export interface AccessTokenPayload {
   userId: string

@@ -65,6 +65,12 @@ enum LeadStatus {
   SPAM
 }
 
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // ==========================================
 // AUTH / USERS
 // ==========================================
@@ -80,6 +86,7 @@ model User {
   role          UserRole @default(BUYER)
   isVerified    Boolean  @default(false)
   isActive      Boolean  @default(true)
+  agentApplication AgentApplication?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -120,6 +127,7 @@ model Agency {
   website     String?
   licenseNo   String?  @unique
   isVerified  Boolean  @default(false)
+  agentApplications AgentApplication[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -144,6 +152,23 @@ model Agent {
   properties   Property[] @relation("PropertyAgent")
 
   @@map("agents")
+}
+
+model AgentApplication {
+  id         String            @id @default(uuid())
+  userId     String            @unique
+  user       User              @relation(fields: [userId], references: [id])
+  licenseNo  String?
+  bio        String?
+  languages  String[]
+  agencyId   String?
+  agency     Agency?           @relation(fields: [agencyId], references: [id])
+  status     ApplicationStatus @default(PENDING)
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime          @default(now())
+
+  @@map("agent_applications")
 }
 
 // ==========================================

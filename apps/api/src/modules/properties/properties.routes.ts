@@ -16,7 +16,7 @@ router.post(
   requireRole('AGENT', 'AGENCY_ADMIN', 'ADMIN'),
   catchAsync(propertiesController.create)
 )
-
+router.post('/:id/images', requireAuth, catchAsync(propertiesController.addImage))
 router.patch('/:id', requireAuth, catchAsync(propertiesController.update))
 router.delete('/:id', requireAuth, catchAsync(propertiesController.remove))
 

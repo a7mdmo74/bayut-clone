@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express'
 import { verifyAccessToken } from '../modules/auth/token.util'
 import { AppError } from '../utils/AppError'
-import type { UserRole } from '@bayut-clone/types'
+import type { UserRole } from '@repo/types'
 
 // extend Express's Request type so req.user is known to TypeScript
 declare global {
@@ -21,7 +21,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const token = header.split(' ')[1]
 
   try {
-    const payload = verifyAccessToken(token)
+    const payload = verifyAccessToken(token!)
     req.user = payload
     next()
   } catch {

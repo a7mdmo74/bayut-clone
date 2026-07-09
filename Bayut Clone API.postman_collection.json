@@ -24,6 +24,31 @@
       "key": "propertyId",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "applicationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "uploadUrl",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "publicUrl",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "fileKey",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "downloadUrl",
+      "value": "",
+      "type": "string"
     }
   ],
   "auth": {
@@ -200,7 +225,7 @@
                 {
                   "key": "propertyType",
                   "value": "APARTMENT",
-                  "description": "Filter by property type: APARTMENT, VILLA, TOWNHOUSE, etc."
+                  "description": "Filter by property type: APARTMENT, VILLA, TOWNHOUSE, PENTHOUSE, STUDIO, OFFICE, RETAIL, WAREHOUSE, LAND, BUILDING"
                 },
                 {
                   "key": "communityId",
@@ -283,7 +308,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Luxury Apartment in Downtown Dubai\",\n  \"description\": \"Beautiful 2-bedroom apartment with stunning views of the Dubai skyline. Features modern amenities, spacious living area, and premium finishes throughout.\",\n  \"propertyType\": \"APARTMENT\",\n  \"listingType\": \"SALE\",\n  \"price\": 1500000,\n  \"bedrooms\": 2,\n  \"bathrooms\": 2,\n  \"areaSqft\": 1200,\n  \"furnished\": true,\n  \"addressLine\": \"Sheikh Zayed Road, Downtown Dubai\",\n  \"latitude\": 25.1972,\n  \"longitude\": 55.2744\n}",
+              "raw": "{\n  \"title\": \"Luxury Apartment in Downtown Dubai\",\n  \"description\": \"Beautiful 2-bedroom apartment with stunning views of the Dubai skyline. Features modern amenities, spacious living area, and premium finishes throughout.\",\n  \"propertyType\": \"APARTMENT\",\n  \"listingType\": \"SALE\",\n  \"price\": 1500000,\n  \"bedrooms\": 2,\n  \"bathrooms\": 2,\n  \"areaSqft\": 1200,\n  \"furnished\": true,\n  \"addressLine\": \"Sheikh Zayed Road, Downtown Dubai\",\n  \"latitude\": 25.1972,\n  \"longitude\": 55.2744,\n  \"communityId\": \"\",\n  \"amenityIds\": []\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -330,7 +355,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Modern Studio for Rent in Marina\",\n  \"description\": \"Contemporary studio apartment in Dubai Marina with full amenities and stunning marina views.\",\n  \"propertyType\": \"STUDIO\",\n  \"listingType\": \"RENT\",\n  \"price\": 45000,\n  \"rentFrequency\": \"YEARLY\",\n  \"bedrooms\": 0,\n  \"bathrooms\": 1,\n  \"areaSqft\": 500,\n  \"furnished\": true,\n  \"addressLine\": \"Dubai Marina\",\n  \"latitude\": 25.0805,\n  \"longitude\": 55.1406\n}",
+              "raw": "{\n  \"title\": \"Modern Studio for Rent in Marina\",\n  \"description\": \"Contemporary studio apartment in Dubai Marina with full amenities and stunning marina views.\",\n  \"propertyType\": \"STUDIO\",\n  \"listingType\": \"RENT\",\n  \"price\": 45000,\n  \"rentFrequency\": \"YEARLY\",\n  \"bedrooms\": 0,\n  \"bathrooms\": 1,\n  \"areaSqft\": 500,\n  \"furnished\": true,\n  \"addressLine\": \"Dubai Marina\",\n  \"latitude\": 25.0805,\n  \"longitude\": 55.1406,\n  \"communityId\": \"\",\n  \"amenityIds\": []\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -346,6 +371,47 @@
           },
           "response": []
         },
+        {
+          "name": "Add Property Image",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com/property-image.jpg\",\n  \"isCover\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/properties/:id/images",
+              "host": ["{{baseUrl}}"],
+              "path": ["properties", ":id", "images"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{propertyId}}",
+                  "description": "Property ID to add image to"
+                }
+              ]
+            },
+            "description": "Add an image to a property (requires authentication and ownership)"
+          },
+          "response": []
+        },
+
         {
           "name": "Update Property",
           "request": {
@@ -363,7 +429,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated Luxury Apartment in Downtown Dubai\",\n  \"price\": 1600000,\n  \"description\": \"Beautiful 2-bedroom apartment with stunning views of the Dubai skyline. Recently renovated with premium finishes.\"\n}",
+              "raw": "{\n  \"title\": \"Updated Luxury Apartment in Downtown Dubai\",\n  \"price\": 1600000,\n  \"description\": \"Beautiful 2-bedroom apartment with stunning views of the Dubai skyline. Recently renovated with premium finishes.\",\n  \"amenityIds\": []\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -414,6 +480,267 @@
               ]
             },
             "description": "Delete a property (requires authentication and ownership)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Agents",
+      "item": [
+        {
+          "name": "Apply for Agent",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"licenseNo\": \"RERA-12345\",\n  \"bio\": \"Experienced real estate agent specializing in Dubai Marina properties.\",\n  \"languages\": [\"en\", \"ar\"],\n  \"agencyId\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agents/apply",
+              "host": ["{{baseUrl}}"],
+              "path": ["agents", "apply"]
+            },
+            "description": "Apply to become an agent (requires authentication)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('applicationId', jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Applications",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/agents/applications?status=PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["agents", "applications"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "description": "Filter by status: PENDING, APPROVED, REJECTED",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "List agent applications (requires ADMIN role)"
+          },
+          "response": []
+        },
+        {
+          "name": "Review Application",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"APPROVED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/agents/applications/:id/review",
+              "host": ["{{baseUrl}}"],
+              "path": ["agents", "applications", ":id", "review"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{applicationId}}",
+                  "description": "Application ID to review"
+                }
+              ]
+            },
+            "description": "Review an agent application (requires ADMIN role)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Uploads",
+      "item": [
+        {
+          "name": "Generate Presigned URL (Upload)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fileName\": \"property-image.jpg\",\n  \"fileType\": \"image/jpeg\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/uploads/presign",
+              "host": ["{{baseUrl}}"],
+              "path": ["uploads", "presign"]
+            },
+            "description": "Generate a presigned URL for uploading files to S3 (requires authentication). Use the returned uploadUrl with PUT method to upload the file."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('uploadUrl', jsonData.uploadUrl);",
+                  "  pm.collectionVariables.set('publicUrl', jsonData.publicUrl);",
+                  "  pm.collectionVariables.set('fileKey', jsonData.key);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload File to S3",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "image/jpeg"
+              }
+            ],
+            "body": {
+              "mode": "file",
+              "file": {
+                "src": "/path/to/your/image.jpg"
+              }
+            },
+            "url": {
+              "raw": "{{uploadUrl}}",
+              "host": ["{{uploadUrl}}"]
+            },
+            "description": "Upload the actual file to S3 using the presigned URL from the previous request. Replace /path/to/your/image.jpg with actual file path."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Presigned URL (Download)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/presign?key={{fileKey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["uploads", "presign"],
+              "query": [
+                {
+                  "key": "key",
+                  "value": "{{fileKey}}",
+                  "description": "The S3 key of the file (returned from upload presign)"
+                }
+              ]
+            },
+            "description": "Generate a presigned URL for downloading/viewing files from S3 (requires authentication)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.collectionVariables.set('downloadUrl', jsonData.downloadUrl);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Serve File via API",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/uploads/files/{{fileKey}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["uploads", "files", "{{fileKey}}"]
+            },
+            "description": "Serve file directly through the API (proxies from S3). This is simpler than using presigned URLs for downloads. No authentication required."
           },
           "response": []
         }

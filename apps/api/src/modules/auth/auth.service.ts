@@ -1,16 +1,8 @@
 import { prisma } from '../../lib/prisma'
+import { AppError } from '../../utils/AppError'
 import { hashPassword, comparePassword } from './password.util'
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from './token.util'
-import type { RegisterInput, LoginInput } from '@bayut-clone/types'
-
-class AppError extends Error {
-  constructor(
-    public statusCode: number,
-    message: string
-  ) {
-    super(message)
-  }
-}
+import type { RegisterInput, LoginInput } from '@repo/types'
 
 export async function registerUser(input: RegisterInput) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } })
