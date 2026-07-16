@@ -157,7 +157,7 @@
     "password": "Password",
     "firstName": "First name",
     "lastName": "Last name",
-    "phone": "Phone (optional)",
+    "phone": "Phone",
     "role": "I am...",
     "buyer": "Looking to buy/rent",
     "agent": "A real estate agent",

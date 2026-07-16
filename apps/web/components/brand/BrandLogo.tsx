@@ -37,7 +37,7 @@ interface BrandLogoProps {
   priority?: boolean
 }
 
-export function BrandLogo({ variant = 'horizontal', className, priority }: BrandLogoProps) {
+export function BrandLogo({ variant = 'stacked', className, priority }: BrandLogoProps) {
   const logo = LOGOS[variant]
 
   return (
