@@ -2,6 +2,6 @@
   "installCommand": "bun install",
   "buildCommand": "bunx turbo run build --filter=web...",
   "framework": "nextjs",
-  "outputDirectory": "apps/web/.next",
+  "outputDirectory": ".next",
   "regions": ["iad1"]
 }
