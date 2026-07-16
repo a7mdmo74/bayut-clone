@@ -94,10 +94,7 @@ export function RegisterForm() {
 
       const roleFromResponse = data?.role ?? data?.user?.role
       const finalRedirect =
-        redirectParam ||
-        (role === 'AGENT' || roleFromResponse === 'AGENT'
-          ? '/become-agent'
-          : getDashboardPath(roleFromResponse))
+        redirectParam || getDashboardPath(roleFromResponse || role)
       router.push(finalRedirect)
       router.refresh()
     } catch (error) {

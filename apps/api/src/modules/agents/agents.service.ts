@@ -5,28 +5,19 @@ import { sendAgentApplicationEmail } from '../../lib/email'
 import { logger } from '../../lib/logger'
 
 export async function getDashboardStats(agentId: string) {
-  const [activeListings, totalViews, inquiries, leadCredits] = await Promise.all([
+  const [activeListings, totalViews, inquiries] = await Promise.all([
     prisma.property.count({ where: { ownerId: agentId, status: 'ACTIVE' } }),
     prisma.property.aggregate({
       where: { ownerId: agentId },
       _sum: { viewsCount: true },
     }),
     prisma.lead.count({ where: { property: { ownerId: agentId } } }),
-    prisma.subscription.findFirst({
-      where: {
-        agentId: agentId,
-        status: 'ACTIVE',
-        currentPeriodEnd: { gte: new Date() }
-      },
-      include: { plan: true }
-    }),
   ])
 
   return {
     activeListings,
     totalViews: totalViews._sum.viewsCount || 0,
     inquiries,
-    leadCredits: leadCredits?.plan?.maxListings || 0,
   }
 }
 

@@ -23,6 +23,7 @@ export async function registerUser(input: RegisterInput) {
       firstName: input.firstName,
       lastName: input.lastName,
       phone: input.phone,
+      role: input.role || 'BUYER',
     },
   })
 

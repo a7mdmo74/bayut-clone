@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, CreditCard, Home, Plus, Settings, TrendingUp } from 'lucide-react'
+import { Building2, Home, Plus, Settings, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -13,7 +13,6 @@ interface DashboardStats {
   activeListings: number
   totalViews: number
   inquiries: number
-  leadCredits: number
 }
 
 interface AgentProperty {
@@ -40,12 +39,10 @@ interface Lead {
 
 export function AgentDashboardContent() {
   const t = useTranslations('agentDashboard')
-  const [subscription, setSubscription] = useState<any>(null)
   const [statsData, setStatsData] = useState<DashboardStats>({
     activeListings: 0,
     totalViews: 0,
     inquiries: 0,
-    leadCredits: 0,
   })
   const [propertiesData, setPropertiesData] = useState<AgentProperty[]>([])
   const [leadsData, setLeadsData] = useState<Lead[]>([])
@@ -54,16 +51,11 @@ export function AgentDashboardContent() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [subData, stats, properties, leads] = await Promise.all([
-          clientFetch('/payments/subscription').catch(() => null),
+        const [stats, properties, leads] = await Promise.all([
           clientFetch('/agents/dashboard/stats').catch(() => null),
           clientFetch('/agents/properties').catch(() => null),
           clientFetch('/leads').catch(() => null),
         ])
-
-        if (subData) {
-          setSubscription(subData)
-        }
 
         if (stats && typeof stats === 'object') {
           setStatsData(stats as DashboardStats)
@@ -112,11 +104,7 @@ export function AgentDashboardContent() {
       value: statsData.inquiries.toString(),
       icon: <Building2 className='h-4 w-4' />,
     },
-    {
-      label: t('stats.leadCredits'),
-      value: statsData.leadCredits.toString(),
-      icon: <CreditCard className='h-4 w-4' />,
-    },
+
   ]
 
   const properties = propertiesData.slice(0, 3)
@@ -151,25 +139,6 @@ export function AgentDashboardContent() {
             </Card>
           ))}
         </div>
-
-        {/* Subscription Alert */}
-        {!subscription && (
-          <Card className='mb-8 border-orange-200 bg-orange-50 p-6'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <h3 className='font-semibold text-orange-900'>{t('noSubscriptionTitle')}</h3>
-                <p className='mt-1 text-sm text-orange-700'>{t('noSubscriptionDescription')}</p>
-              </div>
-              <Button
-                variant='outline'
-                className='border-orange-300 text-orange-900 hover:bg-orange-100'
-                render={<Link href='/agent/billing' />}
-              >
-                {t('viewPlans')}
-              </Button>
-            </div>
-          </Card>
-        )}
 
         <Tabs defaultValue='properties' className='space-y-6'>
           <TabsList>
@@ -294,14 +263,6 @@ export function AgentDashboardContent() {
             <Card className='p-6'>
               <h3 className='font-semibold mb-4'>{t('accountSettings')}</h3>
               <div className='space-y-4'>
-                <Button
-                  variant='outline'
-                  className='w-full justify-start'
-                  render={<Link href='/agent/billing' />}
-                >
-                  <CreditCard className='h-4 w-4 me-2' />
-                  {t('billingSettings')}
-                </Button>
                 <Button variant='outline' className='w-full justify-start' disabled>
                   <Settings className='h-4 w-4 me-2' />
                   {t('profileSettings')}

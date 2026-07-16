@@ -25,7 +25,6 @@ export function AgentShell({ children }: { children: React.ReactNode }) {
     { to: '/agent/dashboard' as const, label: t('dashboard') },
     { to: '/agent/properties' as const, label: t('properties') },
     { to: '/agent/transactions' as const, label: t('transactions') },
-    { to: '/agent/billing' as const, label: t('billing') },
     { to: '/agent/viewings' as const, label: t('viewings') },
   ]
 
@@ -65,9 +64,6 @@ export function AgentShell({ children }: { children: React.ReactNode }) {
               <DropdownMenuContent align='end' className='w-48'>
                 <DropdownMenuItem render={<Link href='/agent/dashboard' />}>
                   {t('dashboard')}
-                </DropdownMenuItem>
-                <DropdownMenuItem render={<Link href='/agent/billing' />}>
-                  {t('billing')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem render={<Link href='/' />}>{t('backToSite')}</DropdownMenuItem>
