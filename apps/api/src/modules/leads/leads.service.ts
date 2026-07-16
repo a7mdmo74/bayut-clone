@@ -1,17 +1,29 @@
 import { prisma } from '../../lib/prisma'
 import { AppError } from '../../utils/AppError'
 import type { CreateLeadInput, UpdateLeadStatusInput } from '@repo/types'
+import { sendNewLeadEmail } from '../../lib/email'
+import { logger } from '../../lib/logger'
 
 export async function createLead(input: CreateLeadInput, senderId?: string) {
-  // Verify property exists
+  // Verify property exists and get owner info
   const property = await prisma.property.findUnique({
     where: { id: input.propertyId },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+    },
   })
   if (!property) {
     throw new AppError(404, 'Property not found')
   }
 
-  return prisma.lead.create({
+  const lead = await prisma.lead.create({
     data: {
       propertyId: input.propertyId,
       senderId,
@@ -40,6 +52,22 @@ export async function createLead(input: CreateLeadInput, senderId?: string) {
         : false,
     },
   })
+
+  // Send email notification to property owner (fire-and-forget with error logging)
+  sendNewLeadEmail({
+    agentEmail: property.owner.email,
+    agentName: property.owner.firstName,
+    propertyTitle: property.title,
+    leadName: input.name,
+    leadEmail: input.email,
+    leadPhone: input.phone,
+    leadMessage: input.message || 'No message provided',
+    locale: 'ar', // Default to Arabic, would ideally come from user preference
+  }).catch(error => {
+    logger.error({ error, leadId: lead.id, propertyId: input.propertyId }, 'Failed to send new lead email')
+  })
+
+  return lead
 }
 
 export async function getLeadsForAgent(userId: string, userRole: string) {
@@ -53,7 +81,7 @@ export async function getLeadsForAgent(userId: string, userRole: string) {
           },
         }
 
-  return prisma.lead.findMany({
+  const leads = await prisma.lead.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     include: {
@@ -70,10 +98,27 @@ export async function getLeadsForAgent(userId: string, userRole: string) {
           firstName: true,
           lastName: true,
           email: true,
+          phone: true,
         },
       },
     },
   })
+
+  return {
+    leads: leads.map(lead => ({
+      id: lead.id,
+      propertyTitle: lead.property.title,
+      propertySlug: lead.property.slug,
+      senderName: lead.sender
+        ? `${lead.sender.firstName} ${lead.sender.lastName}`
+        : lead.name,
+      senderEmail: lead.sender?.email || lead.email,
+      senderPhone: lead.sender?.phone || lead.phone,
+      message: lead.message,
+      status: lead.status,
+      createdAt: lead.createdAt.toISOString(),
+    })),
+  }
 }
 
 export async function updateLeadStatus(
@@ -102,5 +147,21 @@ export async function updateLeadStatus(
   return prisma.lead.update({
     where: { id: leadId },
     data: { status: input.status },
+  })
+}
+
+export async function getLeadsForUser(userId: string) {
+  return prisma.lead.findMany({
+    where: { senderId: userId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      property: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+        },
+      },
+    },
   })
 }

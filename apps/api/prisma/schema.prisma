@@ -10,7 +10,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ==========================================
@@ -45,6 +44,7 @@ enum ListingType {
 enum ListingStatus {
   DRAFT
   ACTIVE
+  RESERVED // Buyer paid reservation fee; sale not yet legally finalized
   PENDING
   RENTED
   SOLD
@@ -72,6 +72,57 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum PlanInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum PaymentProvider {
+  STRIPE
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+  CANCELED
+}
+
+enum PaymentPurpose {
+  SUBSCRIPTION
+  LISTING_BOOST
+  LEAD_CREDITS
+  VIEWING_DEPOSIT
+  PROPERTY_RESERVATION
+}
+
+enum ViewingStatus {
+  REQUESTED
+  DEPOSIT_PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELED_BY_BUYER
+  CANCELED_BY_AGENT
+  NO_SHOW
+}
+
+enum DepositStatus {
+  PENDING
+  HELD
+  REFUNDED
+  FORFEITED
+  FAILED
+}
+
 // ==========================================
 // AUTH / USERS
 // ==========================================
@@ -87,6 +138,10 @@ model User {
   role          UserRole @default(BUYER)
   isVerified    Boolean  @default(false)
   isActive      Boolean  @default(true)
+  resetToken    String?  @unique
+  resetTokenExpiresAt DateTime?
+  verificationToken    String?  @unique
+  verificationTokenExpiresAt DateTime?
   agentApplication AgentApplication?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -97,6 +152,11 @@ model User {
   savedSearches SavedSearch[]
   leadsSent     Lead[]          @relation("LeadSender")
   refreshTokens RefreshToken[]
+  viewings      Viewing[]
+  notifications Notification[]
+  reviews       AgentReview[]
+  auditLogs     AuditLog[]
+  searchLogs    SearchLog[]
 
   @@map("users")
 }
@@ -147,10 +207,15 @@ model Agent {
   licenseNo    String?  @unique
   bio          String?
   languages    String[] // e.g. ["en", "ar"]
+  leadCredits  Int      @default(0) // purchased lead credits for contact reveals
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  properties   Property[] @relation("PropertyAgent")
+  properties      Property[] @relation("PropertyAgent")
+  subscriptions   Subscription[]
+  viewings        Viewing[]
+  reviews         AgentReview[]
+  availability    AgentAvailability[]
 
   @@map("agents")
 }
@@ -251,6 +316,7 @@ model Property {
 
   viewsCount      Int           @default(0)
   isFeatured      Boolean       @default(false)
+  featuredExpiry  DateTime?     // when featured status expires
   publishedAt     DateTime?
   expiresAt       DateTime?
   createdAt       DateTime      @default(now())
@@ -260,6 +326,7 @@ model Property {
   amenities       PropertyAmenity[]
   favorites       Favorite[]
   leads           Lead[]
+  viewings        Viewing[]
 
   @@index([listingType, propertyType, status])
   @@index([communityId])
@@ -341,4 +408,195 @@ model SavedSearch {
   createdAt DateTime @default(now())
 
   @@map("saved_searches")
+}
+
+// ==========================================
+// PAYMENTS / SUBSCRIPTIONS
+// ==========================================
+
+model Plan {
+  id             String       @id @default(uuid())
+  name           String
+  interval       PlanInterval
+  priceAed       Decimal      @db.Decimal(10, 2)
+  maxListings    Int
+  maxFeatured    Int
+  isActive       Boolean      @default(true)
+  subscriptions  Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  agentId            String
+  agent              Agent              @relation(fields: [agentId], references: [id])
+  planId             String
+  plan               Plan               @relation(fields: [planId], references: [id])
+  status             SubscriptionStatus @default(ACTIVE)
+  providerRef        String?            // Stripe customer/subscription reference
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  payments           Payment[]
+
+  @@index([agentId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id             String          @id @default(uuid())
+  subscriptionId String?
+  subscription   Subscription?   @relation(fields: [subscriptionId], references: [id])
+  userId         String
+  provider       PaymentProvider
+  purpose        PaymentPurpose
+  amountAed      Decimal         @db.Decimal(10, 2)
+  status         PaymentStatus   @default(PENDING)
+  providerRef    String          @unique // provider's transaction/order ID
+  idempotencyKey String          @unique // prevents double-charging from webhook retries
+  metadata       Json?           // e.g. { propertyId } for boosts, { creditCount } for lead credits, { viewingId } for viewing deposits
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([status])
+  @@index([userId])
+  @@map("payments")
+}
+
+// ==========================================
+// VIEWINGS / DEPOSITS
+// ==========================================
+
+model Viewing {
+  id             String        @id @default(uuid())
+  propertyId     String
+  property       Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  buyerId        String
+  buyer          User          @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  agentId        String?
+  agent          Agent?        @relation(fields: [agentId], references: [id])
+  scheduledAt    DateTime
+  status         ViewingStatus @default(REQUESTED)
+  depositStatus  DepositStatus @default(PENDING)
+  depositAmount  Decimal       @db.Decimal(10, 2)
+  depositPaymentId String?      @unique // Links to Payment.id (one-way relation for simplicity)
+  cancelReason   String?
+  canceledAt     DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([buyerId])
+  @@index([propertyId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("viewings")
+}
+
+// ==========================================
+// NOTIFICATIONS
+// ==========================================
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // LEAD, VIEWING, PAYMENT, SYSTEM
+  title     String
+  message   String
+  link      String?  // URL to navigate to
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ==========================================
+// AGENT REVIEWS
+// ==========================================
+
+model AgentReview {
+  id        String   @id @default(uuid())
+  agentId   String
+  userId    String
+  rating    Int      // 1-5 stars
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, userId])
+  @@index([agentId])
+  @@index([userId])
+  @@map("agent_reviews")
+}
+
+// ==========================================
+// AGENT AVAILABILITY
+// ==========================================
+
+model AgentAvailability {
+  id        String   @id @default(uuid())
+  agentId   String
+  dayOfWeek Int      // 0=Sunday, 6=Saturday
+  startTime String   // "09:00"
+  endTime   String   // "17:00"
+  isActive  Boolean  @default(true)
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, dayOfWeek])
+  @@index([agentId])
+  @@map("agent_availability")
+}
+
+// ==========================================
+// AUDIT LOG
+// ==========================================
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String   // USER_UPDATE, PROPERTY_REVIEW, AGENCY_VERIFY, etc.
+  targetType String  // User, Property, Agency, Agent, etc.
+  targetId  String
+  details   Json?    // { before: ..., after: ... }
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ==========================================
+// SEARCH ANALYTICS
+// ==========================================
+
+model SearchLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  query     String?
+  filters   Json?
+  resultCount Int
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("search_logs")
 }

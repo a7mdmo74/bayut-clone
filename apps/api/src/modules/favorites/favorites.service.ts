@@ -1,6 +1,16 @@
 import { prisma } from '../../lib/prisma'
+import { toPropertyDTO } from '../../lib/propertyMapper'
 import { AppError } from '../../utils/AppError'
 import type { PaginationQuery } from '@repo/types'
+
+function toFavoriteDTO(favorite: any) {
+  return {
+    id: favorite.id,
+    propertyId: favorite.propertyId,
+    property: toPropertyDTO(favorite.property),
+    createdAt: favorite.createdAt.toISOString(),
+  }
+}
 
 export async function addFavorite(userId: string, propertyId: string) {
   // Verify property exists
@@ -33,14 +43,14 @@ export async function addFavorite(userId: string, propertyId: string) {
     include: {
       property: {
         include: {
-          images: { take: 1, where: { isCover: true } },
-          community: true,
+          images: { take: 1, orderBy: { isCover: 'desc' } },
+          community: { include: { emirate: true } },
         },
       },
     },
   })
 
-  return favorite
+  return toFavoriteDTO(favorite)
 }
 
 export async function removeFavorite(userId: string, propertyId: string) {
@@ -80,8 +90,8 @@ export async function getUserFavorites(userId: string, pagination: PaginationQue
       include: {
         property: {
           include: {
-            images: { take: 1, where: { isCover: true } },
-            community: true,
+            images: { take: 1, orderBy: { isCover: 'desc' } },
+            community: { include: { emirate: true } },
           },
         },
       },
@@ -90,7 +100,7 @@ export async function getUserFavorites(userId: string, pagination: PaginationQue
   ])
 
   return {
-    data,
+    data: data.map(toFavoriteDTO),
     meta: {
       page,
       limit,
@@ -101,15 +111,17 @@ export async function getUserFavorites(userId: string, pagination: PaginationQue
 }
 
 async function getFavoriteById(id: string) {
-  return prisma.favorite.findUnique({
+  const favorite = await prisma.favorite.findUnique({
     where: { id },
     include: {
       property: {
         include: {
-          images: { take: 1, where: { isCover: true } },
-          community: true,
+          images: { take: 1, orderBy: { isCover: 'desc' } },
+          community: { include: { emirate: true } },
         },
       },
     },
   })
+
+  return favorite ? toFavoriteDTO(favorite) : null
 }

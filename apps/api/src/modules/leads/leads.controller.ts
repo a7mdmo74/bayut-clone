@@ -32,11 +32,20 @@ export async function create(req: Request, res: Response) {
 }
 
 export async function list(req: Request, res: Response) {
-  const leads = await leadsService.getLeadsForAgent(req.user!.userId, req.user!.role)
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  const role = req.user.role || 'BUYER'
+  const leads = await leadsService.getLeadsForAgent(req.user.userId, role)
   res.json(leads)
 }
 
 export async function updateStatus(req: Request, res: Response) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   const parsed = updateLeadStatusSchema.safeParse(req.body)
   if (!parsed.success) {
     return res
@@ -44,11 +53,21 @@ export async function updateStatus(req: Request, res: Response) {
       .json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors })
   }
 
+  const role = req.user.role || 'BUYER'
   const lead = await leadsService.updateLeadStatus(
     req.params.id!,
-    req.user!.userId,
-    req.user!.role,
+    req.user.userId,
+    role,
     parsed.data
   )
   res.json(lead)
+}
+
+export async function listForUser(req: Request, res: Response) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  const leads = await leadsService.getLeadsForUser(req.user.userId)
+  res.json(leads)
 }

@@ -6,7 +6,11 @@ import type {
   UpdatePropertyInput,
   PropertySearchQuery,
   PaginationQuery,
+  PropertyDTO,
 } from '@repo/types'
+import { toPropertyDTO } from '../../lib/propertyMapper'
+import { sendEmail } from '../../lib/email'
+import { logSearch } from '../analytics/analytics.service'
 
 // Slugify a title into a URL-safe string, e.g. "2BR Marina View" -> "2br-marina-view"
 function slugify(title: string): string {
@@ -22,31 +26,119 @@ export async function createProperty(ownerId: string, input: CreatePropertyInput
   // append a short random suffix so two "Marina View" listings don't collide
   const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`
 
+  // Prevent duplicate active listings with the same title for the same agent
+  const existingProperty = await prisma.property.findFirst({
+    where: {
+      ownerId,
+      title: input.title,
+      status: { notIn: ['REJECTED', 'EXPIRED'] },
+    },
+  })
+  if (existingProperty) {
+    throw new AppError(409, 'You already have an active listing with this title')
+  }
+
   const { amenityIds, ...propertyData } = input
+
+  const agent = await prisma.agent.findUnique({ where: { userId: ownerId } })
 
   const property = await prisma.property.create({
     data: {
       ...propertyData,
       slug,
       ownerId,
+      agentId: agent?.id,
+      status: 'ACTIVE',
+      publishedAt: new Date(),
       amenities: amenityIds ? { create: amenityIds.map(amenityId => ({ amenityId })) } : undefined,
     },
-    include: { images: true, amenities: { include: { amenity: true } }, community: true },
+    include: { images: true, amenities: { include: { amenity: true } }, community: { include: { emirate: true } } },
   })
 
-  return property
+  // Fire-and-forget: check saved search alerts
+  checkSavedSearchAlerts(property).catch(err => {
+    logger.error({ err, propertyId: property.id }, 'Failed to check saved search alerts')
+  })
+
+  return toPropertyDTO(property)
+}
+
+export async function checkSavedSearchAlerts(property: any) {
+  try {
+    const savedSearches = await prisma.savedSearch.findMany({
+      where: { alertsOn: true },
+      include: { user: true },
+    })
+
+    for (const saved of savedSearches) {
+      const filters = (saved.filters as Record<string, any>) || {}
+      let matches = true
+
+      if (filters.listingType && filters.listingType !== property.listingType) matches = false
+      if (filters.propertyType && filters.propertyType !== property.propertyType) matches = false
+      if (filters.bedrooms !== undefined && filters.bedrooms !== null) {
+        if (property.bedrooms === null || property.bedrooms < filters.bedrooms) matches = false
+      }
+      if (filters.bathrooms !== undefined && filters.bathrooms !== null) {
+        if (property.bathrooms === null || property.bathrooms < filters.bathrooms) matches = false
+      }
+      if (filters.minPrice !== undefined && Number(property.price) < filters.minPrice) matches = false
+      if (filters.maxPrice !== undefined && Number(property.price) > filters.maxPrice) matches = false
+
+      if (matches) {
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
+        sendEmail({
+          to: saved.user.email,
+          subject: `New Property Match: ${property.title}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2>Hello ${saved.user.firstName},</h2>
+              <p>A new property matches your saved search "<strong>${saved.name}</strong>":</p>
+              <p><strong>${property.title}</strong> — AED ${Number(property.price).toLocaleString()}</p>
+              <a href="${frontendUrl}/properties/${property.slug}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0;">View Property</a>
+              <p>Best regards,<br>Bayara Real Estate Team</p>
+            </div>
+          `,
+        }).catch(err => {
+          logger.error({ err, savedSearchId: saved.id }, 'Failed to send saved search alert')
+        })
+      }
+    }
+  } catch (err) {
+    logger.error({ err }, 'Error checking saved search alerts')
+  }
+}
+
+async function withDbRetry<T>(operation: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastError: unknown
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await operation()
+    } catch (err) {
+      lastError = err
+      const code = (err as { code?: string }).code
+      const retryable = code === 'ETIMEDOUT' || code === 'ECONNREFUSED' || code === 'P1001' || code === 'P1008'
+      if (!retryable || attempt === attempts) break
+      const delayMs = attempt * 1000
+      logger.warn({ code, attempt, delayMs }, 'Transient DB error — retrying')
+      await new Promise(resolve => setTimeout(resolve, delayMs))
+    }
+  }
+  throw lastError
 }
 
 export async function getPropertyBySlug(slug: string) {
-  const property = await prisma.property.findUnique({
-    where: { slug },
-    include: {
-      images: { orderBy: { order: 'asc' } },
-      amenities: { include: { amenity: true } },
-      community: { include: { emirate: true } },
-      agent: { include: { user: true } },
-    },
-  })
+  const property = await withDbRetry(() =>
+    prisma.property.findUnique({
+      where: { slug },
+      include: {
+        images: { orderBy: { order: 'asc' } },
+        amenities: { include: { amenity: true } },
+        community: { include: { emirate: true } },
+        agent: { include: { user: true } },
+      },
+    })
+  )
 
   if (!property) {
     throw new AppError(404, 'Property not found')
@@ -60,7 +152,7 @@ export async function getPropertyBySlug(slug: string) {
     })
     .catch((err: any) => logger.error('Failed to increment view count:', err))
 
-  return property
+  return toPropertyDTO(property)
 }
 
 export async function searchProperties(filters: PropertySearchQuery, pagination: PaginationQuery) {
@@ -108,14 +200,21 @@ export async function searchProperties(filters: PropertySearchQuery, pagination:
       orderBy,
       include: {
         images: { where: { isCover: true }, take: 1 },
-        community: true,
+        community: { include: { emirate: true } },
       },
     }),
     prisma.property.count({ where }),
   ])
 
+  // Fire-and-forget: log search for analytics
+  logSearch({
+    query: filters.keyword || undefined,
+    filters: filters as Record<string, any>,
+    resultCount: total,
+  }).catch(() => {})
+
   return {
-    data,
+    data: data.map(toPropertyDTO),
     meta: {
       page,
       limit,
@@ -123,6 +222,19 @@ export async function searchProperties(filters: PropertySearchQuery, pagination:
       totalPages: Math.ceil(total / limit),
     },
   }
+}
+
+export async function getFeaturedProperties(limit = 6) {
+  const properties = await prisma.property.findMany({
+    where: { status: 'ACTIVE', isFeatured: true },
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      images: { where: { isCover: true }, take: 1 },
+      community: { include: { emirate: true } },
+    },
+  })
+  return properties.map(toPropertyDTO)
 }
 
 export async function updateProperty(
@@ -144,7 +256,7 @@ export async function updateProperty(
 
   const { amenityIds, ...updateData } = input
 
-  return prisma.property.update({
+  const updated = await prisma.property.update({
     where: { id: propertyId },
     data: {
       ...updateData,
@@ -155,7 +267,10 @@ export async function updateProperty(
         },
       }),
     },
+    include: { images: true, amenities: { include: { amenity: true } }, community: { include: { emirate: true } } },
   })
+
+  return toPropertyDTO(updated)
 }
 
 export async function deleteProperty(propertyId: string, userId: string, userRole: string) {

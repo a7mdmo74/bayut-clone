@@ -13,6 +13,8 @@
     "check-types": "tsc --noEmit"
   },
   "devDependencies": {
+    "@repo/eslint-config": "*",
+    "eslint": "^9.39.1",
     "typescript": "^5.5.4"
   },
   "dependencies": {

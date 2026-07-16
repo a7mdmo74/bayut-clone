@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { paginationQuerySchema } from './common'
 
 export const updateUserStatusSchema = z.object({
   isActive: z.boolean(),

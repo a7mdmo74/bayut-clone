@@ -11,7 +11,7 @@ export type CreateSavedSearchInput = z.infer<typeof createSavedSearchSchema>
 export interface SavedSearchDTO {
   id: string
   name: string
-  filters: any
+  filters: unknown
   alertsOn: boolean
   createdAt: string
 }

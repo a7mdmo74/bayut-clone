@@ -7,7 +7,7 @@ import type { UserRole } from '@repo/types'
 declare global {
   namespace Express {
     interface Request {
-      user?: { userId: string; role: UserRole }
+      user?: { userId: string; role?: UserRole }
     }
   }
 }
@@ -31,7 +31,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 export function requireRole(...roles: UserRole[]) {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    if (!req.user || !req.user.role || !roles.includes(req.user.role)) {
       throw new AppError(403, 'You do not have permission to perform this action')
     }
     next()

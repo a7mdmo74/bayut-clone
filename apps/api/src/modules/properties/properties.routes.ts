@@ -6,6 +6,7 @@ import * as propertiesController from './properties.controller'
 const router: Router = Router()
 
 // Public routes — no auth needed, buyers browse freely
+router.get('/featured', catchAsync(propertiesController.getFeatured))
 router.get('/', catchAsync(propertiesController.search))
 router.get('/:slug', catchAsync(propertiesController.getOne))
 

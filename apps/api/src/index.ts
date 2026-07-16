@@ -1,9 +1,12 @@
 import express, { type Request, type Response, type NextFunction } from 'express'
+import helmet from 'helmet'
 import { env } from './config/env'
-import { prisma } from './lib/prisma'
+import { isStripeConfigured } from './lib/stripe'
+import { disconnectPrisma, prisma } from './lib/prisma'
 import { AppError } from './utils/AppError'
-import { authLimiter, generalLimiter } from './middleware/rateLimiter'
+import { generalLimiter } from './middleware/rateLimiter'
 import { logger } from './lib/logger'
+import { catchAsync } from './utils/catchAsync'
 import pinoHttp from 'pino-http'
 import swaggerUi from 'swagger-ui-express'
 import { openApiSchema } from './lib/openapi'
@@ -17,12 +20,69 @@ import leadsRoutes from './modules/leads/leads.routes'
 import locationsRoutes from './modules/locations/locations.routes'
 import amenitiesRoutes from './modules/amenities/amenities.routes'
 import adminRoutes from './modules/admin/admin.routes'
+import paymentsRoutes from './modules/payments/payments.routes'
+import * as paymentsController from './modules/payments/payments.controller'
+import viewingsRoutes from './modules/viewings/viewings.routes'
+import usersRoutes from './modules/users/users.routes'
+import notificationsRoutes from './modules/notifications/notifications.routes'
+import reviewsRoutes from './modules/reviews/reviews.routes'
+import agenciesRoutes from './modules/agencies/agencies.routes'
+import availabilityRoutes from './modules/availability/availability.routes'
+import cronRoutes from './modules/cron/cron.routes'
+import { runAllCronJobs } from './modules/cron/cron.service'
+import auditRoutes from './modules/audit/audit.routes'
 
 const app = express()
 
 // ==========================================
 // Global Middleware
 // ==========================================
+
+// Security headers with API-appropriate CSP
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        // API-only: no scripts/styles needed, strict policy
+        scriptSrc: ["'none'"],
+        styleSrc: ["'none'"],
+        imgSrc: ["'self'", "data:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'none'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Allow API usage from different origins
+  })
+)
+
+// CORS middleware
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const origin = env.CORS_ORIGIN
+  if (origin !== '*') {
+    res.setHeader('Access-Control-Allow-Origin', origin)
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Allow-Credentials', 'true')
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200)
+  }
+  next()
+})
+
+// Stripe webhook MUST receive the raw body for signature verification.
+// Register before express.json() so the body is not parsed as JSON first.
+app.post(
+  '/payments/webhooks/stripe',
+  express.raw({ type: 'application/json' }),
+  catchAsync(paymentsController.stripeWebhook)
+)
+
 app.use(express.json())
 app.use(pinoHttp({ logger }))
 app.use(generalLimiter)
@@ -65,6 +125,15 @@ app.use('/leads', leadsRoutes)
 app.use('/locations', locationsRoutes)
 app.use('/amenities', amenitiesRoutes)
 app.use('/admin', adminRoutes)
+app.use('/payments', paymentsRoutes)
+app.use('/viewings', viewingsRoutes)
+app.use('/users', usersRoutes)
+app.use('/notifications', notificationsRoutes)
+app.use('/reviews', reviewsRoutes)
+app.use('/agencies', agenciesRoutes)
+app.use('/availability', availabilityRoutes)
+app.use('/cron', cronRoutes)
+app.use('/audit', auditRoutes)
 
 // API Documentation
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(openApiSchema))
@@ -79,10 +148,30 @@ app.use((req: Request, res: Response) => {
 // Centralized error handler — must be registered LAST
 // ==========================================
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  logger.error(err.stack)
+  logger.error(
+    {
+      err,
+      name: err.name,
+      message: err.message,
+      ...(typeof (err as { code?: string }).code === 'string'
+        ? { code: (err as { code?: string }).code }
+        : {}),
+      ...(typeof (err as { meta?: unknown }).meta !== 'undefined'
+        ? { meta: (err as { meta?: unknown }).meta }
+        : {}),
+    },
+    'Unhandled API error'
+  )
 
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({ error: err.message })
+  }
+
+  const code = (err as { code?: string }).code
+  if (code === 'ETIMEDOUT' || code === 'P1001' || code === 'P1008') {
+    return res.status(503).json({
+      error: 'Database temporarily unavailable. Please try again.',
+    })
   }
 
   res.status(500).json({
@@ -96,7 +185,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 // ==========================================
 async function shutdown() {
   logger.info('Shutting down gracefully...')
-  await prisma.$disconnect()
+  await disconnectPrisma()
   await logger.flush()
   process.exit(0)
 }
@@ -111,4 +200,21 @@ app.listen(env.PORT, () => {
   logger.info(`🚀 Server running on http://localhost:${env.PORT}`)
   logger.info(`📊 Health check: http://localhost:${env.PORT}/health`)
   logger.info(`📚 API Documentation: http://localhost:${env.PORT}/docs`)
+  logger.info(
+    {
+      credentialsConfigured: isStripeConfigured(),
+      webhookPath: '/payments/webhooks/stripe',
+    },
+    'Stripe payment configuration'
+  )
+
+  // Run cron jobs every hour (only in production or when CRON_SECRET is set)
+  if (env.NODE_ENV === 'production' || process.env.CRON_SECRET) {
+    setInterval(() => {
+      runAllCronJobs().catch(err => {
+        logger.error({ err }, 'Cron job execution failed')
+      })
+    }, 60 * 60 * 1000) // Every hour
+    logger.info('⏰ Cron scheduler started (hourly)')
+  }
 })

@@ -20,6 +20,7 @@ export type ListingType = z.infer<typeof listingTypeSchema>
 export const listingStatusSchema = z.enum([
   'DRAFT',
   'ACTIVE',
+  'RESERVED',
   'PENDING',
   'RENTED',
   'SOLD',
@@ -82,6 +83,11 @@ export const updatePropertySchema = z
   })
 export type UpdatePropertyInput = z.infer<typeof updatePropertySchema>
 
+export const reviewPropertyStatusSchema = z.object({
+  status: z.enum(['ACTIVE', 'REJECTED']),
+})
+export type ReviewPropertyStatusInput = z.infer<typeof reviewPropertyStatusSchema>
+
 export const propertySortBySchema = z.enum(['newest', 'price_asc', 'price_desc'])
 export type PropertySortBy = z.infer<typeof propertySortBySchema>
 
@@ -89,7 +95,7 @@ export const propertySearchQuerySchema = z.object({
   listingType: listingTypeSchema.optional(),
   propertyType: propertyTypeSchema.optional(),
   communityId: z.string().uuid().optional(),
-  minPrice: z.coerce.number().positive().optional(),
+  minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().positive().optional(),
   bedrooms: z.coerce.number().int().min(0).optional(),
   bathrooms: z.coerce.number().int().min(0).optional(),

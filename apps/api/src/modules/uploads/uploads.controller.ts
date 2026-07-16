@@ -2,6 +2,21 @@ import type { Request, Response } from 'express'
 import { presignUploadSchema } from '@repo/types'
 import * as uploadsService from './uploads.service'
 
+const MIME_TYPES: Record<string, string> = {
+  jpeg: 'image/jpeg',
+  jpg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  gif: 'image/gif',
+  svg: 'image/svg+xml',
+  pdf: 'application/pdf',
+}
+
+function getContentType(key: string): string {
+  const ext = key.split('.').pop()?.toLowerCase() ?? ''
+  return MIME_TYPES[ext] ?? 'application/octet-stream'
+}
+
 export async function presign(req: Request, res: Response) {
   const parsed = presignUploadSchema.safeParse(req.body)
   if (!parsed.success) {
@@ -31,11 +46,9 @@ export async function serveFile(req: Request, res: Response) {
   try {
     const stream = await uploadsService.getFileStream(key)
 
-    // Set appropriate headers
-    res.setHeader('Content-Type', 'image/jpeg')
+    res.setHeader('Content-Type', getContentType(key))
     res.setHeader('Cache-Control', 'public, max-age=3600')
 
-    // Pipe the S3 stream to the response
     if (stream && typeof (stream as any).pipe === 'function') {
       (stream as any).pipe(res)
 
@@ -44,10 +57,6 @@ export async function serveFile(req: Request, res: Response) {
         if (!res.headersSent) {
           res.status(500).json({ error: 'Failed to serve file' })
         }
-      })
-
-      (stream as any).on('end', () => {
-        // Stream ended successfully
       })
     } else {
       res.status(500).json({ error: 'Failed to serve file - invalid stream' })

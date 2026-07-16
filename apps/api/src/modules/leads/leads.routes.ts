@@ -22,4 +22,11 @@ router.patch(
   catchAsync(leadsController.updateStatus)
 )
 
+// Protected route — user only (get own leads)
+router.get(
+  '/user',
+  requireAuth,
+  catchAsync(leadsController.listForUser)
+)
+
 export default router

@@ -1,159 +1,241 @@
-# Turborepo starter
+# Bayara - UAE Real Estate Marketplace
 
-This Turborepo starter is maintained by the Turborepo core team.
+A bilingual (Arabic/English) real estate marketplace for the UAE, built with modern technologies and production-ready architecture.
 
-## Using this example
+## 🏠 What is Bayara?
 
-Run the following command:
+Bayara is a comprehensive real estate platform connecting buyers, tenants, and RERA-certified agents across Dubai, Abu Dhabi, and Sharjah. The platform features:
 
-```sh
-npx create-turbo@latest
+- **Property Listings**: Browse apartments, villas, townhouses, and commercial properties
+- **Agent Portal**: RERA-certified agents can list properties and manage inquiries
+- **Payment Integration**: Secure payment processing via Stripe Checkout for subscriptions, listing boosts, and reservations
+- **Bilingual Interface**: Full Arabic (default) and English language support
+- **Advanced Search**: Filter by location, price, property type, amenities, and more
+- **Saved Searches**: Get alerts when new properties match your criteria
+- **Viewing Scheduling**: Book property viewings
+
+## 🚀 Tech Stack
+
+### Core Technologies
+- **Monorepo**: Turborepo for efficient build management
+- **Runtime**: Bun (JavaScript runtime) throughout the stack
+- **Frontend**: Next.js 16 with App Router
+- **Backend**: Express.js with TypeScript
+- **Database**: PostgreSQL with Prisma 7 ORM
+- **Authentication**: JWT-based auth with token rotation
+
+### Key Libraries & Services
+- **UI Components**: shadcn/ui + Radix UI + Tailwind CSS 4
+- **Internationalization**: next-intl for bilingual support
+- **Payments**: Stripe Checkout (card payments in AED)
+- **File Storage**: AWS S3 for property images
+- **Email**: Resend for transactional emails
+- **Security**: Helmet for security headers, bcrypt for password hashing
+
+### Why This Stack?
+
+- **Turborepo**: Efficient monorepo management with shared types and configurations
+- **Prisma 7 + Driver Adapters**: Latest Prisma with improved performance and TypeScript support
+- **next-intl**: Best-in-class i18n for Next.js with proper locale routing
+- **Stripe**: Hosted Checkout for card payments; webhooks verify with raw request body
+- **Bun**: Fast JavaScript runtime with native TypeScript support
+
+## 🏗️ Architecture
+
+```
+bayut-clone/
+├── apps/
+│   ├── web/           # Next.js 16 frontend (Vercel deployment)
+│   └── api/           # Express.js backend (Railway deployment)
+├── packages/
+│   ├── types/         # Shared TypeScript types (Zod schemas)
+│   ├── ui/            # Shared React components (shadcn/ui)
+│   ├── eslint-config/ # Shared ESLint configuration
+│   └── typescript-config/ # Shared TypeScript configuration
+└── docs/              # Architecture documentation
 ```
 
-## What's inside?
+### Request Flow
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```
+Browser → Next.js Frontend → Express API → PostgreSQL → Response
+                ↓            ↓              ↓
+            Static Assets  JWT Auth      Prisma ORM
+            CDN/Vercel    Rate Limit     Data Access
 ```
 
-Without global `turbo`, use your package manager:
+### Service Layering
 
-```sh
-cd my-turborepo
-npx turbo build
-bun dlx turbo build
-bun exec turbo build
+- **Routes**: HTTP endpoint definitions (`*.routes.ts`)
+- **Controllers**: Request/response handling (`*.controller.ts`)
+- **Services**: Business logic (`*.service.ts`)
+- **Utils**: Helper functions (`AppError`, `catchAsync`)
+- **Types**: Shared Zod schemas for validation
+
+## ✨ Key Features
+
+### For Buyers & Tenants
+- Advanced property search with filters
+- Save favorite properties
+- Save search criteria and get alerts
+- Contact agents directly
+- Schedule property viewings
+- Secure payment processing
+
+### For Agents
+- RERA certification verification
+- Property listing management
+- Lead tracking and management
+- Subscription plans for enhanced features
+- Viewing schedule management
+- Analytics dashboard
+
+### For Admins
+- Agent application review
+- Platform-wide analytics
+- User management
+- Content moderation
+
+## 🛠️ Local Setup
+
+### Prerequisites
+- Bun runtime (latest version)
+- PostgreSQL 16+
+- Node.js 18+ (for some dependencies)
+
+### Installation
+
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd bayut-clone
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
+2. **Install dependencies**
+```bash
+bun install
 ```
 
-Without global `turbo`:
+3. **Set up environment variables**
 
-```sh
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
+For the API (`apps/api/.env`):
+```bash
+cp apps/api/.env.example apps/api/.env
+# Edit apps/api/.env with your values
 ```
 
-### Develop
+Required API environment variables:
+- `DATABASE_URL`: PostgreSQL connection string
+- `JWT_SECRET`: At least 32 characters
+- `JWT_REFRESH_SECRET`: At least 32 characters
+- `AWS_ACCESS_KEY_ID`: AWS S3 access key
+- `AWS_SECRET_ACCESS_KEY`: AWS S3 secret key
+- `AWS_REGION`: AWS region (e.g., eu-north-1)
+- `AWS_S3_BUCKET`: S3 bucket name
+- `FRONTEND_URL`: Frontend URL (http://localhost:3000)
+- `API_URL`: API URL (http://localhost:3001)
 
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+For the Web (`apps/web/.env.local`):
+```bash
+cp apps/web/.env.example apps/web/.env.local
+# Edit apps/web/.env.local with your values
 ```
 
-Without global `turbo`, use your package manager:
+Required web environment variables:
+- `NEXT_PUBLIC_API_URL`: API URL (http://localhost:3001)
+- `NEXT_PUBLIC_APP_URL`: App URL (http://localhost:3000)
 
-```sh
-cd my-turborepo
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
+4. **Set up the database**
+```bash
+cd apps/api
+bunx prisma migrate dev
+bun run seed  # Optional: seed sample data
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
+5. **Start development servers**
+```bash
+# From root directory
+bun run dev
 ```
 
-Without global `turbo`:
+This will start:
+- Frontend: http://localhost:3000
+- API: http://localhost:3001
+- API Docs: http://localhost:3001/docs
 
-```sh
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
+## 🚢 Deployment
+
+### Frontend (Vercel)
+1. Connect Vercel to GitHub repository
+2. Configure environment variables
+3. Deploy automatically on push to main
+
+### Backend (Railway)
+1. Create Railway project
+2. Add PostgreSQL service
+3. Configure environment variables
+4. Deploy via GitHub integration
+
+See `PRODUCTION_CHECKLIST.md` for detailed deployment instructions.
+
+## 📚 Documentation
+
+- **[Production Checklist](PRODUCTION_CHECKLIST.md)**: Pre-deployment requirements
+- **[Security Audit](SECURITY_AUDIT.md)**: Security review and findings
+- **Payments**: Stripe Checkout + webhook at `POST /payments/webhooks/stripe` (register in Stripe Dashboard)
+
+## 🔒 Security
+
+- JWT-based authentication with token rotation
+- Rate limiting on all endpoints
+- Security headers via Helmet
+- CORS restriction in production
+- Input validation via Zod schemas
+- SQL injection prevention via Prisma ORM
+- Password hashing with bcrypt
+- Webhook signature verification
+
+## 🧪 Testing
+
+```bash
+# Type checking
+bun run check-types
+
+# Linting
+bun run lint
+
+# Build
+bun run build
 ```
 
-### Remote Caching
+## 📊 Live Demo
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+<!-- TODO: Add live demo URL -->
+<!-- TODO: Add screenshots -->
+- Homepage: [TODO]
+- Property Listing: [TODO]
+- Agent Dashboard: [TODO]
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+## 🤝 Contributing
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+This is a portfolio project demonstrating production-ready architecture. For contributions:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+1. Follow existing code conventions
+2. Add types for new features in `packages/types`
+3. Use service/controller/route layering
+4. Test thoroughly before committing
 
-```sh
-cd my-turborepo
-turbo login
-```
+## 📄 License
 
-Without global `turbo`, use your package manager:
+This project is for educational/portfolio purposes.
 
-```sh
-cd my-turborepo
-npx turbo login
-bun exec turbo login
-bun exec turbo login
-```
+## 🙏 Acknowledgments
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+- Built with [Turborepo](https://turbo.build/)
+- UI components from [shadcn/ui](https://ui.shadcn.com/)
+- Payment processing via [Stripe](https://stripe.com/)
+- Inspired by [Bayut](https://www.bayut.com/)
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+---
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+**Note**: This is a portfolio project for demonstration purposes. Production deployment requires proper domain configuration, SSL certificates, and compliance with UAE real estate regulations.

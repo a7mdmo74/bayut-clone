@@ -13,6 +13,7 @@ export async function generatePresignedUrl(input: PresignUploadInput) {
     Bucket: env.AWS_S3_BUCKET,
     Key: key,
     ContentType: input.fileType,
+    ACL: 'public-read',
   })
 
   // this URL is valid for 60 seconds — enough time for the client to start the upload

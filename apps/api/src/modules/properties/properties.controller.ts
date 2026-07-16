@@ -44,6 +44,10 @@ export async function search(req: Request, res: Response) {
 }
 
 export async function update(req: Request, res: Response) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   const parsed = updatePropertySchema.safeParse(req.body)
   if (!parsed.success) {
     return res
@@ -51,17 +55,23 @@ export async function update(req: Request, res: Response) {
       .json({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors })
   }
 
+  const role = req.user.role || 'BUYER'
   const property = await propertiesService.updateProperty(
     req.params.id!,
-    req.user!.userId,
-    req.user!.role,
+    req.user.userId,
+    role,
     parsed.data
   )
   res.json(property)
 }
 
 export async function remove(req: Request, res: Response) {
-  await propertiesService.deleteProperty(req.params.id!, req.user!.userId, req.user!.role)
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  const role = req.user.role || 'BUYER'
+  await propertiesService.deleteProperty(req.params.id!, req.user.userId, role)
   res.status(204).send()
 }
 
@@ -80,4 +90,10 @@ export async function addImage(req: Request, res: Response) {
     parsed.data.isCover
   )
   res.status(201).json(image)
+}
+
+export async function getFeatured(req: Request, res: Response) {
+  const limit = req.query.limit ? Number(req.query.limit) : 6
+  const properties = await propertiesService.getFeaturedProperties(limit)
+  res.json(properties)
 }

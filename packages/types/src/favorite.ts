@@ -1,4 +1,3 @@
-import { z } from 'zod'
 
 // No input schema needed for POST/DELETE — only route params
 // Pure output shape — backend constructs this
