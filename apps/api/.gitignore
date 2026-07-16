@@ -29,7 +29,7 @@ yarn-error.log*
 .turbo
 
 # prisma
-prisma/migrations/
+# prisma/migrations/ -- DO NOT IGNORE: needed for production deploys
 
 
 /src/generated/prisma
