@@ -1,7 +1,6 @@
 import type { Request, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../../lib/prisma'
-import { viewingStatusSchema } from '@repo/types'
 import * as viewingsService from './viewings.service'
 
 // Request viewing schema
@@ -17,7 +16,7 @@ const cancelViewingSchema = z.object({
 
 // Update viewing status schema (for agents)
 const updateViewingStatusSchema = z.object({
-  status: viewingStatusSchema,
+  status: z.enum(['REQUESTED', 'DEPOSIT_PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELED_BY_BUYER', 'CANCELED_BY_AGENT', 'NO_SHOW']),
 })
 
 export async function request(req: Request, res: Response) {
