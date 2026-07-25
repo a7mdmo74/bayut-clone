@@ -17,6 +17,7 @@ Bayara is a comprehensive real estate platform connecting buyers, tenants, and R
 ## 🚀 Tech Stack
 
 ### Core Technologies
+
 - **Monorepo**: Turborepo for efficient build management
 - **Runtime**: Bun (JavaScript runtime) throughout the stack
 - **Frontend**: Next.js 16 with App Router
@@ -25,6 +26,7 @@ Bayara is a comprehensive real estate platform connecting buyers, tenants, and R
 - **Authentication**: JWT-based auth with token rotation
 
 ### Key Libraries & Services
+
 - **UI Components**: shadcn/ui + Radix UI + Tailwind CSS 4
 - **Internationalization**: next-intl for bilingual support
 - **Payments**: Stripe Checkout (card payments in AED)
@@ -75,6 +77,7 @@ Browser → Next.js Frontend → Express API → PostgreSQL → Response
 ## ✨ Key Features
 
 ### For Buyers & Tenants
+
 - Advanced property search with filters
 - Save favorite properties
 - Save search criteria and get alerts
@@ -83,6 +86,7 @@ Browser → Next.js Frontend → Express API → PostgreSQL → Response
 - Secure payment processing
 
 ### For Agents
+
 - RERA certification verification
 - Property listing management
 - Lead tracking and management
@@ -91,6 +95,7 @@ Browser → Next.js Frontend → Express API → PostgreSQL → Response
 - Analytics dashboard
 
 ### For Admins
+
 - Agent application review
 - Platform-wide analytics
 - User management
@@ -99,6 +104,7 @@ Browser → Next.js Frontend → Express API → PostgreSQL → Response
 ## 🛠️ Local Setup
 
 ### Prerequisites
+
 - Bun runtime (latest version)
 - PostgreSQL 16+
 - Node.js 18+ (for some dependencies)
@@ -106,12 +112,14 @@ Browser → Next.js Frontend → Express API → PostgreSQL → Response
 ### Installation
 
 1. **Clone the repository**
+
 ```bash
 git clone <repository-url>
 cd bayut-clone
 ```
 
 2. **Install dependencies**
+
 ```bash
 bun install
 ```
@@ -119,12 +127,14 @@ bun install
 3. **Set up environment variables**
 
 For the API (`apps/api/.env`):
+
 ```bash
 cp apps/api/.env.example apps/api/.env
 # Edit apps/api/.env with your values
 ```
 
 Required API environment variables:
+
 - `DATABASE_URL`: PostgreSQL connection string
 - `JWT_SECRET`: At least 32 characters
 - `JWT_REFRESH_SECRET`: At least 32 characters
@@ -133,19 +143,22 @@ Required API environment variables:
 - `AWS_REGION`: AWS region (e.g., eu-north-1)
 - `AWS_S3_BUCKET`: S3 bucket name
 - `FRONTEND_URL`: Frontend URL (http://localhost:3000)
-- `API_URL`: API URL (http://localhost:3001)
+- `API_URL`: API URL (http://localhost:5000)
 
 For the Web (`apps/web/.env.local`):
+
 ```bash
 cp apps/web/.env.example apps/web/.env.local
 # Edit apps/web/.env.local with your values
 ```
 
 Required web environment variables:
-- `NEXT_PUBLIC_API_URL`: API URL (http://localhost:3001)
+
+- `NEXT_PUBLIC_API_URL`: API URL (http://localhost:5000)
 - `NEXT_PUBLIC_APP_URL`: App URL (http://localhost:3000)
 
 4. **Set up the database**
+
 ```bash
 cd apps/api
 bunx prisma migrate dev
@@ -153,24 +166,28 @@ bun run seed  # Optional: seed sample data
 ```
 
 5. **Start development servers**
+
 ```bash
 # From root directory
 bun run dev
 ```
 
 This will start:
+
 - Frontend: http://localhost:3000
-- API: http://localhost:3001
-- API Docs: http://localhost:3001/docs
+- API: http://localhost:5000
+- API Docs: http://localhost:5000/docs
 
 ## 🚢 Deployment
 
 ### Frontend (Vercel)
+
 1. Connect Vercel to GitHub repository
 2. Configure environment variables
 3. Deploy automatically on push to main
 
 ### Backend (Railway)
+
 1. Create Railway project
 2. Add PostgreSQL service
 3. Configure environment variables
@@ -212,6 +229,7 @@ bun run build
 
 <!-- TODO: Add live demo URL -->
 <!-- TODO: Add screenshots -->
+
 - Homepage: [TODO]
 - Property Listing: [TODO]
 - Agent Dashboard: [TODO]

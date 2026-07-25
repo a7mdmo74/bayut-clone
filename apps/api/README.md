@@ -49,7 +49,7 @@ Start the development server with hot reload:
 bun run dev
 ```
 
-The API will be available at `http://localhost:3001`
+The API will be available at `http://localhost:5000`
 
 ### Production Build
 

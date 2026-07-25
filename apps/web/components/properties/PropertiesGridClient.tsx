@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { PropertyCard } from './PropertCard'
+import { motion, AnimatePresence } from 'framer-motion'
+import { PropertyCard, PropertyCardSkeleton } from './PropertCard'
 import { PropertyDTO } from '@repo/types'
 import { useFavorites } from '@/hooks/useFavorites'
 import { clientFetch } from '@/lib/api/client'
+import { fadeIn } from '@/lib/motion'
 
 interface PropertiesGridClientProps {
   properties?: PropertyDTO[]
@@ -33,20 +35,41 @@ export function PropertiesGridClient({ properties: initialProperties }: Properti
     }
   }, [initialProperties])
 
-  if (loading) {
-    return <div className='grid gap-5 sm:grid-cols-2 lg:grid-cols-3'>Loading...</div>
-  }
-
   return (
-    <div className='grid gap-5 sm:grid-cols-2 lg:grid-cols-3'>
-      {properties.map(property => (
-        <PropertyCard
-          key={property.id}
-          property={property}
-          isFavorite={isFavorite(property.id)}
-          onFavoriteToggle={toggleFavorite}
-        />
-      ))}
-    </div>
+    <AnimatePresence mode='wait'>
+      {loading ? (
+        <motion.div
+          key='skeleton'
+          className='grid gap-5 sm:grid-cols-2 lg:grid-cols-3'
+          variants={fadeIn}
+          initial='hidden'
+          animate='visible'
+          exit={{ opacity: 0, transition: { duration: 0.2 } }}
+        >
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <PropertyCardSkeleton key={i} />
+          ))}
+        </motion.div>
+      ) : (
+        <motion.div
+          key='grid'
+          className='grid gap-5 sm:grid-cols-2 lg:grid-cols-3'
+          variants={fadeIn}
+          initial='hidden'
+          animate='visible'
+          transition={{ duration: 0.3 }}
+        >
+          {properties.map((property, index) => (
+            <PropertyCard
+              key={property.id}
+              property={property}
+              isFavorite={isFavorite(property.id)}
+              onFavoriteToggle={toggleFavorite}
+              index={index}
+            />
+          ))}
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }

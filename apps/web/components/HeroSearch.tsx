@@ -1,6 +1,7 @@
 'use client'
 import { Search } from 'lucide-react'
 import { useState } from 'react'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -17,6 +18,7 @@ import { useTranslations } from 'next-intl'
 export function HeroSearch() {
   const navigate = useRouter()
   const t = useTranslations('search')
+  const prefersReduced = useReducedMotion()
 
   const [tab, setTab] = useState<'Sale' | 'Rent'>('Sale')
   const [q, setQ] = useState('')
@@ -112,25 +114,58 @@ export function HeroSearch() {
           </SelectContent>
         </Select>
 
-        <Select
-          key={tab} // Force re-render when tab changes
-          value={price}
-          onValueChange={value => setPrice(value ?? 'any')}
-        >
-          <SelectTrigger
-            className='h-11 w-full min-w-0 text-foreground'
-            aria-label={t('price')}
+        {prefersReduced ? (
+          <div key={tab} className='min-w-0'>
+            <Select
+              value={price}
+              onValueChange={value => setPrice(value ?? 'any')}
+            >
+              <SelectTrigger
+                className='h-11 w-full min-w-0 text-foreground'
+                aria-label={t('price')}
+              >
+                <SelectValue placeholder={t('price')} className='text-foreground' />
+              </SelectTrigger>
+              <SelectContent>
+                {priceRanges[tab].map(range => (
+                  <SelectItem key={range.value} value={range.value}>
+                    {range.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <AnimatePresence mode='wait'>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className='min-w-0'
           >
-            <SelectValue placeholder={t('price')} className='text-foreground' />
-          </SelectTrigger>
-          <SelectContent>
-            {priceRanges[tab].map(range => (
-              <SelectItem key={range.value} value={range.value}>
-                {range.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <Select
+              value={price}
+              onValueChange={value => setPrice(value ?? 'any')}
+            >
+              <SelectTrigger
+                className='h-11 w-full min-w-0 text-foreground'
+                aria-label={t('price')}
+              >
+                <SelectValue placeholder={t('price')} className='text-foreground' />
+              </SelectTrigger>
+              <SelectContent>
+                {priceRanges[tab].map(range => (
+                  <SelectItem key={range.value} value={range.value}>
+                    {range.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </motion.div>
+        </AnimatePresence>
+        )}
 
         <Button size='lg' onClick={submit} className='h-11 w-full px-8 md:w-auto'>
           {t('search')}

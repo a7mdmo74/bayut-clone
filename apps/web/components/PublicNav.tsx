@@ -1,6 +1,8 @@
 'use client'
 import { Heart, Menu, Moon, Sun, User } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { fadeIn } from '@/lib/motion'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { BrandLogo } from '@/components/brand/BrandLogo'
@@ -251,7 +253,14 @@ export function PublicNav({ user }: PublicNavProps) {
 export function PublicFooter() {
   const t = useTranslations('footer')
   return (
-    <footer className='border-t bg-muted/40'>
+    <motion.footer
+      className='border-t bg-muted/40'
+      variants={fadeIn}
+      initial='hidden'
+      whileInView='visible'
+      viewport={{ once: true, margin: '-50px' }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+    >
       <div className='mx-auto grid max-w-7xl gap-8 px-4 py-12 md:grid-cols-4'>
         <div>
           <BrandLogo variant='stacked' className='h-12' />
@@ -285,7 +294,7 @@ export function PublicFooter() {
       <div className='border-t py-4 text-center text-xs text-muted-foreground'>
         {t('copyright')}
       </div>
-    </footer>
+    </motion.footer>
   )
 }
 

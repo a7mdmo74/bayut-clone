@@ -3,7 +3,7 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import { refreshAccessToken, clearAuthCookies } from '@/lib/auth/refreshSession'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:3001'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'http://localhost:5000'
 
 export class AuthError extends Error {
   constructor(message: string) {

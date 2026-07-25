@@ -61,7 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   // Fetch active properties for dynamic URLs
-  const apiUrl = process.env.API_URL || 'http://localhost:3001'
+  const apiUrl = process.env.API_URL || 'http://localhost:5000'
   let propertyUrls: MetadataRoute.Sitemap = []
 
   try {

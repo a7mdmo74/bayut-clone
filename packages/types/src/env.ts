@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-    PORT: z.coerce.number().default(3001),
+    PORT: z.coerce.number().default(5000),
     DATABASE_URL: z.string(),
     JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
     JWT_REFRESH_SECRET: z.string().min(32),
@@ -22,7 +22,7 @@ export const envSchema = z
 
     // Public URLs used in Stripe Checkout return / cancel redirects
     FRONTEND_URL: z.string().url().default('http://localhost:3000'),
-    API_URL: z.string().url().default('http://localhost:3001'),
+    API_URL: z.string().url().default('http://localhost:5000'),
 
     // CORS origin (defaults to * in development, must be set in production)
     CORS_ORIGIN: z.string().default('*'),

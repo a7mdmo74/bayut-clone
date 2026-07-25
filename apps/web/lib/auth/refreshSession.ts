@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 interface RefreshResult {
   accessToken: string
@@ -93,8 +93,6 @@ export async function clearAuthCookies() {
  * Used when refresh fails or user is explicitly logged out.
  */
 export function redirectToLogin(currentPath?: string) {
-  const loginUrl = currentPath
-    ? `/login?redirect=${encodeURIComponent(currentPath)}`
-    : '/login'
+  const loginUrl = currentPath ? `/login?redirect=${encodeURIComponent(currentPath)}` : '/login'
   redirect(loginUrl)
 }

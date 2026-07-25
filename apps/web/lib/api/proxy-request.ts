@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { refreshAccessToken, setAuthCookies, clearAuthCookies } from '@/lib/auth/refreshSession'
 
 export const API_URL =
-  process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 
 export async function getAuthToken() {
   const cookieStore = await cookies()
@@ -54,9 +54,12 @@ export async function proxyFetch<T>(path: string, options: RequestInit = {}): Pr
   return res.json()
 }
 
+const PUBLIC_PATHS = ['/properties/featured', '/locations', '/amenities']
+
 export async function proxyToApi(path: string, options: RequestInit = {}) {
-  let token = await getAuthToken()
-  if (!token) {
+  const isPublic = PUBLIC_PATHS.some(p => path.startsWith(p))
+  let token = isPublic ? undefined : await getAuthToken()
+  if (!token && !isPublic) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -70,7 +73,10 @@ export async function proxyToApi(path: string, options: RequestInit = {}) {
       res = await fetchWithAuth(path, options, token)
     } else {
       await clearAuthCookies()
-      return NextResponse.json({ error: 'Authentication failed. Please log in again.' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Authentication failed. Please log in again.' },
+        { status: 401 }
+      )
     }
   }
 

@@ -10,12 +10,15 @@ import { PropertyDTO } from '@repo/types'
 import { useFormatter, useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { addFavorite, FavoriteError, removeFavorite } from '@/lib/api/user'
+import { motion, useReducedMotion } from 'framer-motion'
+import { fadeInUp } from '@/lib/motion'
 
 interface PropertyCardProps {
   property: PropertyDTO
   className?: string
   isFavorite?: boolean
   onFavoriteToggle?: (propertyId: string, isFavorite: boolean) => void
+  index?: number
 }
 
 export function PropertyCard({
@@ -23,6 +26,7 @@ export function PropertyCard({
   className,
   isFavorite: initialFavorite = false,
   onFavoriteToggle,
+  index = 0,
 }: PropertyCardProps) {
   const t = useTranslations('property')
   const format = useFormatter()
@@ -30,6 +34,7 @@ export function PropertyCard({
   const pathname = usePathname()
   const [isFavorite, setIsFavorite] = useState(initialFavorite)
   const [isLoading, setIsLoading] = useState(false)
+  const prefersReduced = useReducedMotion()
 
   useEffect(() => {
     setIsFavorite(initialFavorite)
@@ -69,44 +74,69 @@ export function PropertyCard({
   const propertyHref = `/properties/${property.slug}`
 
   return (
-    <div
+    <motion.div
       className={cn(
         'group overflow-hidden rounded-xl bg-card shadow-card transition hover:shadow-elegant',
         className
       )}
+      variants={fadeInUp}
+      initial='hidden'
+      whileInView='visible'
+      viewport={{ once: true, margin: '-30px' }}
+      transition={{ delay: index * 0.08, duration: 0.4, ease: 'easeOut' }}
     >
       <div className='relative aspect-4/3 overflow-hidden bg-muted'>
         <Link href={propertyHref} className='relative block h-full w-full'>
-          <Image
-            src={property.images[0] || '/properties/apartment-1.jpg'}
-            alt={property.title}
-            loading='lazy'
-            className='h-full w-full object-cover transition duration-500 group-hover:scale-105'
-            fill
-            sizes='(max-width:768px) 100vw, 400px'
-          />
+          <motion.div
+            className='h-full w-full'
+            whileHover={prefersReduced ? undefined : { scale: 1.05 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+          >
+            <Image
+              src={property.images[0] || '/properties/apartment-1.jpg'}
+              alt={property.title}
+              loading='lazy'
+              className='h-full w-full object-cover'
+              fill
+              sizes='(max-width:768px) 100vw, 400px'
+            />
+          </motion.div>
         </Link>
-        <div className='absolute top-3 inset-s-3 flex gap-2'>
+        <motion.div
+          className='absolute top-3 inset-s-3 flex gap-2'
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: index * 0.08 + 0.2, duration: 0.3, ease: 'easeOut' }}
+        >
           <Badge variant='secondary' className='bg-background/90 backdrop-blur'>
             {property.listingType === 'RENT' ? t('forRent') : t('forSale')}
           </Badge>
-        </div>
-        <Button
-          size='icon'
-          variant='secondary'
-          className='absolute top-3 end-3 z-10 h-9 w-9 rounded-full bg-background/90 backdrop-blur'
-          onClick={handleFavoriteClick}
-          disabled={isLoading}
-          aria-label={t('favorite')}
-          aria-pressed={isFavorite}
+        </motion.div>
+        <motion.div
+          className='absolute top-3 end-3 z-10'
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: index * 0.08 + 0.25, duration: 0.3, ease: 'easeOut' }}
         >
-          <Heart
-            className={cn(
-              'h-4 w-4 transition-colors',
-              isFavorite ? 'fill-red-500 text-red-500' : ''
-            )}
-          />
-        </Button>
+          <Button
+            size='icon'
+            variant='secondary'
+            className='h-9 w-9 rounded-full bg-background/90 backdrop-blur'
+            onClick={handleFavoriteClick}
+            disabled={isLoading}
+            aria-label={t('favorite')}
+            aria-pressed={isFavorite}
+          >
+            <Heart
+              className={cn(
+                'h-4 w-4 transition-colors',
+                isFavorite ? 'fill-red-500 text-red-500' : ''
+              )}
+            />
+          </Button>
+        </motion.div>
       </div>
       <Link href={propertyHref} className='block space-y-2 p-4'>
         <div className='flex items-baseline justify-between gap-2'>
@@ -143,7 +173,7 @@ export function PropertyCard({
           </span>
         </div>
       </Link>
-    </div>
+    </motion.div>
   )
 }
 
