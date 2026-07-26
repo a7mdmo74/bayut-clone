@@ -7,7 +7,7 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "postinstall": "node -e \"const fs=require('fs'),p=require('path');const web='apps/web/node_modules',root='node_modules';['next','react','react-dom','framer-motion','next-intl','next-themes'].forEach(pkg=>{const t=p.join(root,pkg),s=p.join(web,pkg);if(fs.existsSync(s)&&!fs.existsSync(t))fs.symlinkSync(s,t)})\""
+    "postinstall": "node -e \"const fs=require('fs'),p=require('path');const web='apps/web/node_modules',root='node_modules';['next','react','react-dom','framer-motion','next-intl','next-themes'].forEach(pkg=>{const t=p.join(root,pkg),s=p.join(web,pkg);try{if(fs.existsSync(s)&&!fs.existsSync(t))fs.symlinkSync(s,t)}catch(e){}})\""
   },
   "devDependencies": {
     "prettier": "^3.9.5",
