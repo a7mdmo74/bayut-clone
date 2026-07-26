@@ -93,12 +93,16 @@ export function PropertyCard({
             transition={{ duration: 0.4, ease: 'easeOut' }}
           >
             <Image
-              src={property.images[0] || '/properties/apartment-1.jpg'}
+              src={property.images[0] || '/properties/placeholder.svg'}
               alt={property.title}
               loading='lazy'
               className='h-full w-full object-cover'
               fill
               sizes='(max-width:768px) 100vw, 400px'
+              onError={(e) => {
+                const img = e.target as HTMLImageElement
+                img.src = '/properties/placeholder.svg'
+              }}
             />
           </motion.div>
         </Link>

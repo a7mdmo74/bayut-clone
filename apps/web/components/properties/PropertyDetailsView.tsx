@@ -76,7 +76,7 @@ export default function PropertyDetailsView({ property }: PropertyDetailsViewPro
   const images =
     property.images && property.images.length > 0
       ? property.images
-      : ['/properties/apartment-1.jpg']
+      : ['/properties/placeholder.svg']
 
   const formattedPrice = new Intl.NumberFormat(locale === 'ar' ? 'ar-AE' : 'en-AE', {
     style: 'currency',
@@ -95,11 +95,15 @@ export default function PropertyDetailsView({ property }: PropertyDetailsViewPro
       <div className='grid grid-cols-1 md:grid-cols-4 gap-2 mb-6'>
         <div className='md:col-span-3 relative aspect-video rounded-xl overflow-hidden bg-muted'>
           <Image
-            src={images[activeImage]}
+            src={images[activeImage] || '/properties/placeholder.svg'}
             alt={property.title}
             fill
             className='object-cover'
             priority
+            onError={(e) => {
+              const img = e.target as HTMLImageElement
+              img.src = '/properties/placeholder.svg'
+            }}
           />
           <button
             type='button'
@@ -130,7 +134,10 @@ export default function PropertyDetailsView({ property }: PropertyDetailsViewPro
                 activeImage === i ? 'border-primary' : 'border-transparent'
               }`}
             >
-              <Image src={img} alt={`${property.title} ${i + 1}`} fill className='object-cover' />
+              <Image src={img || '/properties/placeholder.svg'} alt={`${property.title} ${i + 1}`} fill className='object-cover' onError={(e) => {
+                const imgEl = e.target as HTMLImageElement
+                imgEl.src = '/properties/placeholder.svg'
+              }} />
             </button>
           ))}
         </div>
