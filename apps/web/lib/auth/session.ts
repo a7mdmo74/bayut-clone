@@ -13,7 +13,9 @@ export async function getSession(): Promise<SessionUser | null> {
   if (!token) return null
 
   try {
-    return jwtDecode<SessionUser>(token)
+    const payload = jwtDecode<SessionUser & { exp?: number }>(token)
+    if (payload.exp && payload.exp * 1000 < Date.now()) return null
+    return payload
   } catch {
     return null
   }

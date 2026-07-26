@@ -24,12 +24,6 @@ function isAllowedPath(pathSegments: string[]) {
 }
 
 async function handle(request: NextRequest, pathSegments: string[]) {
-  // DEBUG: log incoming cookie header so we can see what browser sent
-  try {
-    console.log('[backend-proxy] incoming cookie header:', request.headers.get('cookie'))
-  } catch (e) {
-    console.log('[backend-proxy] cookie header read failed', e)
-  }
   if (!isAllowedPath(pathSegments)) {
     return Response.json({ error: 'Forbidden' }, { status: 403 })
   }

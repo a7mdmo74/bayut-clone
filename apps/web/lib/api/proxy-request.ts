@@ -65,6 +65,15 @@ export async function proxyToApi(path: string, options: RequestInit = {}) {
 
   let res = await fetchWithAuth(path, options, token)
 
+  // For public paths, don't retry on auth failure — just return what we got
+  if (isPublic) {
+    if (res.status === 204) {
+      return new NextResponse(null, { status: res.status })
+    }
+    const data = await res.json().catch(() => null)
+    return NextResponse.json(data, { status: res.status })
+  }
+
   if (res.status === 401) {
     const refreshed = await refreshAccessToken()
     if (refreshed) {
